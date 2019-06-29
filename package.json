@@ -3,11 +3,20 @@
   "version": "0.0.1",
   "description": "Serve, build, and deploy AWS Lambda functions",
   "main": "index.js",
-  "dependencies": {},
+  "dependencies": {
+    "@types/express": "^4.17.0",
+    "ts-node-dev": "^1.0.0-pre.40",
+    "typescript": "^3.5.2"
+  },
   "devDependencies": {
-    "jest": "^24.8.0"
+    "@types/jest": "^24.0.15",
+    "jest": "^24.8.0",
+    "ts-jest": "^24.0.2"
   },
   "scripts": {
+    "dev": "ts-node-dev --respawn --transpileOnly ./app/app.ts",
+    "prod": "tsc && node ./build/app.js",
+    "tsc": "tsc",
     "test": "jest"
   },
   "keywords": [
