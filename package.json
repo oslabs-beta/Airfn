@@ -1,0 +1,21 @@
+{
+  "name": "lambda9",
+  "version": "0.0.1",
+  "description": "Serve, build, and deploy AWS Lambda functions",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^24.8.0"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [
+    "lambda",
+    "serverless",
+    "faas",
+    "aws"
+  ],
+  "author": "Bruce Wong, Esther Lee, Jayvee Aspa, Jun Lee",
+  "license": "MIT"
+}
