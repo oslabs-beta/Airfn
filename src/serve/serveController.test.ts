@@ -4,12 +4,97 @@ const {
   promiseHandler,
 } = require('./serveController')();
 
+// ✅ ️️❗️ func path should be the last element of request path
+// ✅❗️ module path should match some pattern
+// ❓ mock createCallback function should have been called one time
+// ❓... and with these args
+// ❓ mock handlerPromise function should have been called one
+// ❓... and with these args
+
+/* Sets up test mocks for Express request and response objects */
+function setup() {
+  const req = {
+    body: {},
+    path: '',
+  };
+  const res = {
+    locals: {
+      error: {},
+      lambdaResponse: {},
+    },
+  };
+  const next = jest.fn();
+  Object.assign(res, {
+    status: jest.fn(
+      function status(this: object) {
+        return this;
+      }.bind(res)
+    ),
+    json: jest.fn(
+      function json(this: object) {
+        return this;
+      }.bind(res)
+    ),
+    send: jest.fn(
+      function send(this: object) {
+        return this;
+      }.bind(res)
+    ),
+  });
+  return { req, res, next };
+}
+
 describe('createHandler', () => {
-  const dir = '/functions';
-  const useStatic = false;
-  const timeout = 5;
-  it('Should return a function', () => {
-    expect(typeof createHandler(dir, useStatic, timeout)).toBe('function');
+  test('Should have proper error object in res.locals if requiring function module fails', async () => {
+    const { req, res, next } = setup();
+    req.path = '/helloasync';
+    const dir = '/functions';
+    const useStatic = false;
+    const timeout = 5;
+    const errorObj = {
+      code: 500,
+      type: 'Server',
+      message: 'Loading function failed',
+    };
+    await createHandler(dir, useStatic, timeout)(req, res, next);
+
+    expect(res.locals.error).toEqual(errorObj);
+  });
+
+  test('Should have a proper error object in res.locals if lambda is not invoked before timeout', async () => {
+    const { req, res, next } = setup();
+    req.path = '/helloasync';
+    const dir = '/functions';
+    const useStatic = false;
+    const timeout = 5;
+    const errorObj = {
+      code: 400,
+      type: 'Client',
+      message: 'Failed to invoke function before timeout',
+    };
+    await createHandler(dir, useStatic, timeout)(req, res, next);
+
+    expect(res.locals.error).toEqual(errorObj);
+  });
+
+  test('Should have a proper lambdaResponse object in res.locals', async () => {
+    const { req, res, next } = setup();
+    req.path = '/helloasync';
+    const dir = '/functions';
+    const useStatic = false;
+    const timeout = 5;
+    const lambdaObj = {
+      code: 400,
+      type: 'Client',
+      message: 'Failed to invoke function before timeout',
+    };
+    const lambdaResponse = {
+      path: '/helloasync',
+      body: 'Hello, World',
+    };
+    await createHandler(dir, useStatic, timeout)(req, res, next);
+
+    expect(res.locals.lambdaResponse).toMatchObject(lambdaResponse);
   });
 });
 describe('createCallback', () => {
@@ -23,31 +108,5 @@ describe('createCallback', () => {
       'Why should you never trust a pig with a ' +
       "secret? Because it's bound to squeal.",
   };
-  const error = {
-    error: true,
-  };
-  it('Should return a function', () => {
-    expect(typeof createCallback(res)).toBe('function');
-  });
-  it('Should return error if err is passed to the callback function', () => {
-    expect(createCallback(res)(error, null)).toBeTruthy();
-  });
 });
-describe('promiseHandler', () => {
-  const promise = 'to be filled in later';
-  const notAPromise = 'to be filled in later';
-  const cb = 'to be filled in later';
-  const notAFunction = 'to be filled in later';
-  it('Should return undefined if promise argument is falsey', () => {
-    expect(promiseHandler(promise, cb)).not.toBeTruthy();
-  });
-  it('Should return undefined if promise.then is not a function', () => {
-    expect(typeof promiseHandler(notAPromise, cb)).toBe('undefined');
-  });
-  it('Should return undefined if callback argument is not a function', () => {
-    expect(typeof promiseHandler(promise, notAFunction)).toBe('undefined');
-  });
-  it('Should return a promise of all arguments are valid', () => {
-    expect(promiseHandler(promise, cb).then).toBeTruthy();
-  });
-});
+describe('promiseHandler', () => {});
