@@ -14,8 +14,11 @@ function setup() {
   const res = {
     locals: {
       error: {},
-      lambdaResponse: {}
-    }
+      lambdaResponse: {},
+    },
+    statusCode: null,
+    body: '',
+    headers: {}
   };
   const next = jest.fn();
   Object.assign(res, {
@@ -89,3 +92,52 @@ describe("createHandler", () => {
     });
   });
 });
+
+describe('createCallback', () => {
+  const res = {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+    statusCode: 200,
+    body:
+      'Why should you never trust a pig with a ' +
+      "secret? Because it's bound to squeal.",
+  };
+
+  test('Should return a function', async () => {
+    const res = {};
+    await expect(typeof createCallback(res)).toEqual('function')
+  });
+
+  test('Returned callback should be able to handle errors', async () => {
+    const res = {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+      statusCode: 200,
+      body:
+        'Why should you never trust a pig with a ' +
+        "secret? Because it's bound to squeal.",
+    };
+    const returnFunc = await createCallback(res)
+    expect(returnFunc(new Error('this is an error'), null)).toBeInstanceOf(Error)
+  })
+
+  test('Callback should set proper response object with status code, headers, and body', async () => {
+    const { res } = setup();
+    const lambdaResponse = {
+      statusCode: 200,
+      headers: {
+        header1: 'Facebook',
+        header2: 'Google'
+      },
+      body: 'Hello, World',
+    };
+    await createCallback(res)(null, lambdaResponse);
+    await expect(res).toMatchObject(lambdaResponse);
+  })
+
+});
+describe('promiseHandler', () => { });
