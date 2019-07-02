@@ -1,5 +1,6 @@
-// import { Request, Response, NextFunction } from "express";
-import express from 'express';
+import express from "express";
+import path from "path";
+import queryString from "querystring";
 
 const app: Express.Application = express();
 module.exports = () => ({
@@ -9,6 +10,19 @@ module.exports = () => ({
       res: Express.Response,
       next: Function
     ) {
+      const fn: string = req.path.split("/").filter(name => name)[0];
+      const joinModPath = path.join(process.cwd(), dir, fn);
+      const handler = require(joinModPath);
+      const lambdaReq = {
+        path: req.path,
+        httpMethod: req.method,
+        queryStringParameters: queryString.parse(req.url.split(/\?(.+)/)[1]),
+        headers: req.headers,
+        body: req.body
+      };
+
+      const promise = handler.handler(lambdaReq, null, null);
+      Promise.all([promise]).then(result => res.send(result));
       return;
     };
   },
