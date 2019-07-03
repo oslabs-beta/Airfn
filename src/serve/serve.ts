@@ -4,7 +4,7 @@ import path from 'path';
 import queryString from 'querystring';
 import bodyParser from 'body-parser';
 const createHandler = serve(path, queryString);
-import run from '../build/build';
+import { run, watch } from '../build/build';
 
 const app: express.Application = express();
 app.use(bodyParser.json());
@@ -17,16 +17,34 @@ const dummyConfigs = {
   userWebpackConfig: true,
   userBabelrc: true,
 };
+
+//run
 run('functions', dummyConfigs)
-  .then(function(stats: any) {
+  .then(function (stats: any) {
     console.log(stats.toString({ color: true }));
   })
-  .catch(function(err: any) {
+  .catch(function (err: any) {
     console.error(err);
     process.exit(1);
   });
 
-app.get('/favicon.ico', function(req, res) {
+//watch
+watch('functions', dummyConfigs, function (err, stats) {
+  if (err) {
+    console.error(err);
+    return;
+  }
+
+  console.log(stats.toString());
+  console.log('\x1b[34m%s\x1b[0m', 'Functions built!');
+
+  //TODO: set server stuff
+  // stats.compilation.chunks.forEach(function (chunk) {
+  //   server.clearCache(chunk.name || chunk.id.toString());
+  // });
+});
+
+app.get('/favicon.ico', function (req, res) {
   return res.status(204).end();
 });
 

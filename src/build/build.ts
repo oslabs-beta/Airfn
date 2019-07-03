@@ -91,7 +91,7 @@ function createWebpackConfig(
     devtool: false,
   };
   // Adds function to the webpack config
-  fs.readdirSync(dirPath).forEach(function(file) {
+  fs.readdirSync(dirPath).forEach(function (file) {
     if (file.match(/\.(m?js|ts)$/)) {
       var name = file.replace(/\.(m?js|ts)$/, '');
       // Excluding test files
@@ -136,8 +136,8 @@ function getBabelTarget(envConfig: any) {
 }
 
 function run(dir: string, additionalConfig: object) {
-  return new Promise(function(resolve, reject) {
-    webpack(createWebpackConfig(dir, additionalConfig), function(err, stats) {
+  return new Promise(function (resolve, reject) {
+    webpack(createWebpackConfig(dir, additionalConfig), function (err, stats) {
       if (err) {
         return reject(err);
       }
@@ -146,7 +146,7 @@ function run(dir: string, additionalConfig: object) {
   });
 }
 
-exports.watch = function(
+function watch(
   dir: string,
   additionalConfig: object,
   cb: webpack.ICompiler.Handler
@@ -155,4 +155,4 @@ exports.watch = function(
   compiler.watch(createWebpackConfig(dir, additionalConfig), cb);
 };
 
-export default run;
+export { run, watch };
