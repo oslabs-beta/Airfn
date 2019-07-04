@@ -7,6 +7,8 @@ import ora from 'ora';
 import cliSpinners from 'cli-spinners';
 import chalk from 'chalk';
 
+const SPINNER_TIMEOUT = 1000;
+
 declare global {
   interface JSON {
     parse(text: Buffer, reviver?: (key: any, value: any) => any): any;
@@ -60,7 +62,7 @@ program
         }
       });
       spinner.stop();
-    }, 1000);
+    }, SPINNER_TIMEOUT);
   });
 
 program
@@ -81,7 +83,7 @@ program
           process.exit(1);
         });
       spinner.stop();
-    }, 1000);
+    }, SPINNER_TIMEOUT);
   });
 
 program.on('command:*', function() {
@@ -91,7 +93,7 @@ program.on('command:*', function() {
 
 program.parse(process.argv);
 
-var NO_COMMAND_SPECIFIED = program.args.length === 0;
+const NO_COMMAND_SPECIFIED = program.args.length === 0;
 
 if (NO_COMMAND_SPECIFIED) {
   program.help();
