@@ -21,9 +21,9 @@ function listen(port: number, useStatic: boolean, timeout: number) {
     return res.end();
   });
 
-  app.listen(PORT, () => {
-    console.log(chalk.green(`Example app listening on port ${PORT}!`));
-  });
+  // app.listen(PORT, () => {
+  //   console.log(chalk.green(`Example app listening on port ${PORT}!`));
+  // });
 
   app.get('/favicon.ico', function (req, res) {
     res.status(204).end();
