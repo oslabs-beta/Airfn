@@ -32,13 +32,13 @@ const stringToBoolean = (val: string) => {
 program
   .command('serve <dir>')
   .description('serve and watch functions')
-  .action(function(cmd) {
+  .action(function (cmd) {
     const spinner = ora('🐑  lambda9: Starting server').start();
     setTimeout(() => {
       spinner.color = 'green';
       const useStatic = Boolean(program.static);
       let server: undefined | void;
-      const startServer = function() {
+      const startServer = function () {
         server = listen(
           program.port || 9000,
           useStatic,
@@ -50,7 +50,9 @@ program
         return;
       }
       const { config: userWebpackConfig, babelrc: useBabelrc = true } = program;
-      watch(cmd, { userWebpackConfig, useBabelrc }, function(err, stats) {
+      watch(cmd, { userWebpackConfig, useBabelrc }, function (err, stats) {
+        console.log(chalk.hex('#FF0000')('!!!!SADFASDFASDFASDFASDFASDFADSFAD'))
+
         if (err) {
           console.error(err);
           return;
@@ -68,17 +70,17 @@ program
 program
   .command('build <dir>')
   .description('build functions')
-  .action(function(cmd) {
+  .action(function (cmd) {
     const spinner = ora('🐑  lambda9: Building functions').start();
     setTimeout(() => {
       spinner.color = 'green';
       const { config: userWebpackConfig, babelrc: useBabelrc = true } = program;
       run(cmd, { userWebpackConfig, useBabelrc })
-        .then(function(stats: any) {
+        .then(function (stats: any) {
           console.log(chalk.hex('#f496f4')(stats.toString()));
           console.log('✅  Done building!');
         })
-        .catch(function(err: Error) {
+        .catch(function (err: Error) {
           console.error(err);
           process.exit(1);
         });
@@ -86,7 +88,7 @@ program
     }, SPINNER_TIMEOUT);
   });
 
-program.on('command:*', function() {
+program.on('command:*', function () {
   console.error(`❌  "${program.args.join(' ')}" command not found!`);
   process.exit(1);
 });
