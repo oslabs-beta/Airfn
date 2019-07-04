@@ -2,8 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import webpack from 'webpack';
 
-const USER_FUNCTONS_DIR_PATH = 'src/functions';
-const USER_FUNCTONS_DIR_NAME = 'src/functions';
+const USER_FUNCTONS_DIR_NAME = 'functions';
 
 const testFilePattern = '\\.(test|spec)\\.?';
 interface babelOptsObj {
@@ -24,30 +23,23 @@ function createWebpackConfig(
     presets: [
       [
         require.resolve('@babel/preset-env'),
-        { targets: { node: getBabelTarget({}) } }, // envConfig set to empty object for now
-      ],
+        { targets: { node: getBabelTarget({}) } }
+      ]
     ],
     plugins: [
       require.resolve('@babel/plugin-proposal-class-properties'),
       require.resolve('@babel/plugin-transform-object-assign'),
-      require.resolve('@babel/plugin-proposal-object-rest-spread'),
-    ],
+      require.resolve('@babel/plugin-proposal-object-rest-spread')
+    ]
   };
 
-  // Find the directory of user's lambdas
   const functionsDir = USER_FUNCTONS_DIR_NAME;
   const functionsPath = path.join(process.cwd(), functionsDir);
   const dirPath = path.join(process.cwd(), dir);
 
   const defineEnv = {};
-  // Object.keys(envConfig: object).forEach(key => {
-  //   defineEnv['process.env.' + key] = JSON.stringify(envConfig[key]);
-  // });
-
-  // Keep the same NODE_ENV if it was specified
   const nodeEnv = process.env.NODE_ENV || 'production';
 
-  // Set webpack mode based on the nodeEnv
   const webpackMode = ['production', 'development'].includes(nodeEnv)
     ? nodeEnv
     : 'none';
@@ -56,7 +48,7 @@ function createWebpackConfig(
     mode: webpackMode,
     resolve: {
       extensions: ['.wasm', '.mjs', '.js', '.json', '.ts'],
-      mainFields: ['module', 'main'],
+      mainFields: ['module', 'main']
     },
     module: {
       rules: [
@@ -67,62 +59,38 @@ function createWebpackConfig(
           ),
           use: {
             loader: require.resolve('babel-loader'),
-            options: { ...babelOpts, babelrc: useBabelrc },
-          },
-        },
-      ],
+            options: { ...babelOpts, babelrc: useBabelrc }
+          }
+        }
+      ]
     },
     context: dirPath,
     entry: {},
     target: 'node',
     plugins: [
       new webpack.IgnorePlugin(/vertx/),
-      new webpack.DefinePlugin(defineEnv),
+      new webpack.DefinePlugin(defineEnv)
     ],
     output: {
       path: functionsPath,
       filename: '[name].js',
-      libraryTarget: 'commonjs',
+      libraryTarget: 'commonjs'
     },
     optimization: {
-      nodeEnv,
+      nodeEnv
     },
     bail: true,
-    devtool: false,
+    devtool: false
   };
-  // Adds function to the webpack config
-  fs.readdirSync(dirPath).forEach(function (file) {
+
+  fs.readdirSync(dirPath).forEach(file => {
     if (file.match(/\.(m?js|ts)$/)) {
       var name = file.replace(/\.(m?js|ts)$/, '');
-      // Excluding test files
       if (!name.match(new RegExp(testFilePattern))) {
         webpackConfig.entry[name] = './' + file;
       }
     }
   });
-
-  // Warn if no functions to process in Webpack
-  // if (Object.keys(webpackConfig.entry) < 1) {
-  //   console.warn(
-  //     `
-  //     ---Start netlify-lambda notification---
-  //     WARNING: No valid single functions files (ending in .mjs, .js or .ts) were found.
-  //     This could be because you have nested them in a folder.
-  //     If this is expected (e.g. you have a zipped function built somewhere else), you may ignore this.
-  //     ---End netlify-lambda notification---
-  //     `
-  //   );
-  // }
-
-  // If user already has a Webpack config that they defined, then merge our Webpack with theirs
-  // if (userWebpackConfig) {
-  //   var webpackAdditional = require(path.join(
-  //     process.cwd(),
-  //     userWebpackConfig
-  //   ));
-
-  //   return merge.smart(webpackConfig, webpackAdditional);
-  // }
 
   return webpackConfig;
 }
@@ -136,8 +104,8 @@ function getBabelTarget(envConfig: any) {
 }
 
 function run(dir: string, additionalConfig: object) {
-  return new Promise(function (resolve, reject) {
-    webpack(createWebpackConfig(dir, additionalConfig), function (err, stats) {
+  return new Promise((resolve, reject) => {
+    webpack(createWebpackConfig(dir, additionalConfig), (err, stats) => {
       if (err) {
         return reject(err);
       }
@@ -153,6 +121,6 @@ function watch(
 ) {
   var compiler = webpack(createWebpackConfig(dir, additionalConfig));
   compiler.watch(createWebpackConfig(dir, additionalConfig), cb);
-};
+}
 
 export { run, watch };
