@@ -13,7 +13,7 @@ function listen(port: number, useStatic: boolean, timeout: number) {
   const PORT = 9000;
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
-  app.get('/favicon.ico', function(req, res) {
+  app.get('/favicon.ico', function (req, res) {
     return res.status(204).end();
   });
 
@@ -25,7 +25,7 @@ function listen(port: number, useStatic: boolean, timeout: number) {
     console.log(chalk.green(`Example app listening on port ${PORT}!`));
   });
 
-  app.get('/favicon.ico', function(req, res) {
+  app.get('/favicon.ico', function (req, res) {
     res.status(204).end();
   });
 }

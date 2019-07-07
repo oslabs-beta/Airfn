@@ -5,10 +5,13 @@
   "main": "index.js",
   "dependencies": {
     "@types/chalk": "^2.2.0",
+    "@types/js-yaml": "^3.12.1",
+    "axios": "^0.19.0",
     "body-parser": "^1.19.0",
     "cli-spinners": "^2.2.0",
     "commander": "^2.20.0",
     "express": "^4.17.1",
+    "js-yaml": "^3.13.1",
     "node-fetch": "^2.6.0",
     "ora": "^3.4.0",
     "querystring": "^0.2.0"
@@ -32,7 +35,7 @@
   },
   "scripts": {
     "start": "npm run dev",
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/bin/command.ts",
+    "dev": "nodemon --exec 'ts-node' src/bin/command.ts",
     "prod": "tsc && node ./build/app.js",
     "tsc": "tsc",
     "test": "jest"
