@@ -106,7 +106,7 @@ program
       });
 
     fs.writeFile('l9config.json', JSON.stringify(l9config), err => {
-      if (err) console.log(`😓    Failed to build config: ${err}`);
+      if (err) console.log(`\n😓    Failed to build config: ${err}`);
       console.log('\n💾   Your Lambda 9 config has been saved!');
     });
   });
@@ -119,7 +119,7 @@ program
     const spinner = ora('🐑  Lambda 9: Serving functions...').start();
     setTimeout(() => {
       const useStatic = Boolean(program.static);
-      let server: any;
+      let server: undefined | void;
       const startServer = () => {
         server = listen(
           l9config.functionsOutput,
@@ -219,7 +219,7 @@ program
             })
             .catch(err => {
               spinner.stop();
-              console.log(`😓   Failed to deploy: ${err}`);
+              console.log(`\n😓 Failed to deploy: ${err}`);
             });
         })
         .catch((err: Error) => {

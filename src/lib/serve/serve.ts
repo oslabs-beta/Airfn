@@ -12,7 +12,7 @@ function listen(
   port: number,
   useStatic: boolean,
   timeout: number
-) : any {
+) {
   const app: express.Application = express();
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
@@ -24,13 +24,8 @@ function listen(
     return res.end();
   });
 
-  const server: any = app.listen(port, () => {
+  app.listen(port, () => {
     console.log(chalk.green(`Example app listening on port ${port}!`));
-  });
-
-
-  app.get('/favicon.ico', function(req, res) {
-    res.status(204).end();
   });
 
    return {
@@ -39,6 +34,5 @@ function listen(
       delete require.cache[require.resolve(module)];
     }
   };
-
 }
 export default listen;
