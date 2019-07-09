@@ -106,7 +106,7 @@ program
       });
 
     fs.writeFile('l9config.json', JSON.stringify(l9config), err => {
-      if (err) console.log(`😓    Failed to build config: ${err}`);
+      if (err) console.log(`\n😓    Failed to build config: ${err}`);
       console.log('\n💾   Your Lambda 9 config has been saved!');
     });
   });
@@ -148,7 +148,13 @@ program
           if (!server) {
             startServer();
             console.log('\n✅  Done serving!');
+          } else {
+            console.log('\n🔨  Done rebuilding!');
           }
+
+          stats.compilation.chunks.forEach((chunk : any)  => {
+            server.clearCache(chunk.name || chunk.id().toString());
+          });
         }
       );
     }, SPINNER_TIMEOUT);
@@ -205,15 +211,15 @@ program
             .then((result: any) => {
               // TODO: Give lambda endpoints to user
               spinner.stop();
-              console.log(`\n🚀 Successfully deployed! ${result.data}`);
-              console.log(`\n🔗 Lambda endpoints:`);
+              console.log(`\n🚀   Successfully deployed! ${result.data}`);
+              console.log(`\n🔗   Lambda endpoints:`);
               result.endpoints.forEach((endpoint: string) => {
                 console.log(BASE_API_GATEWAY_URL + endpoint);
               });
             })
             .catch(err => {
               spinner.stop();
-              console.log(`😓 Failed to deploy: ${err}`);
+              console.log(`\n😓 Failed to deploy: ${err}`);
             });
         })
         .catch((err: Error) => {
@@ -224,7 +230,7 @@ program
   });
 
 program.on('command:*', function() {
-  console.error(`❌  "${program.args.join(' ')}" command not found!`);
+  console.error(`\n❌  "${program.args.join(' ')}" command not found!`);
   process.exit(1);
 });
 

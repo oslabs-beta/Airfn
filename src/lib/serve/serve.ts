@@ -28,8 +28,11 @@ function listen(
     console.log(chalk.green(`Example app listening on port ${port}!`));
   });
 
-  app.get('/favicon.ico', function(req, res) {
-    res.status(204).end();
-  });
+   return {
+    clearCache: (chunk : any)  => {
+      const module = path.join(process.cwd(), String(src), chunk);
+      delete require.cache[require.resolve(module)];
+    }
+  };
 }
 export default listen;
