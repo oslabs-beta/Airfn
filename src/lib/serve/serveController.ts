@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 
 // TODO: Proper TypeScript types for modules
 export default (path: { join: Function }, queryString: { parse: Function }) => (
-  dir: string,
+  dir: string | void,
   useStatic: boolean,
   timeout: number
 ) => {

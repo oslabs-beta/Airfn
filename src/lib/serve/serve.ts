@@ -7,25 +7,28 @@ const createHandler = serve(path, queryString);
 
 import chalk from 'chalk';
 
-function listen(port: number, useStatic: boolean, timeout: number) {
+function listen(
+  src: string | void,
+  port: number,
+  useStatic: boolean,
+  timeout: number
+) {
   const app: express.Application = express();
-  const DEFAULT_DIR: string = 'functions';
-  const PORT = 9000;
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
-  app.get('/favicon.ico', function (req, res) {
+  app.get('/favicon.ico', function(req, res) {
     return res.status(204).end();
   });
 
-  app.all('*', createHandler(DEFAULT_DIR, false, 10), (req, res) => {
+  app.all('*', createHandler(src, false, 10), (req, res) => {
     return res.end();
   });
 
-  app.listen(PORT, () => {
-    console.log(chalk.green(`Example app listening on port ${PORT}!`));
+  app.listen(port, () => {
+    console.log(chalk.green(`Example app listening on port ${port}!`));
   });
 
-  app.get('/favicon.ico', function (req, res) {
+  app.get('/favicon.ico', function(req, res) {
     res.status(204).end();
   });
 }
