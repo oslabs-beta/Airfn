@@ -1,16 +1,20 @@
-import program from 'commander';
+#!/usr/bin/env node
+
 import fs from 'fs';
 import path from 'path';
-import { run, watch } from '../build/build';
-import listen from '../serve/serve';
+import program from 'commander';
+import inquirer from 'inquirer';
 import ora from 'ora';
-import cliSpinners from 'cli-spinners';
 import chalk from 'chalk';
-import axios from 'axios';
-import yaml from 'js-yaml'
+import listen from '../lib/serve/serve';
+import { run, watch } from '../lib/build/build';
+import deploy from '../lib/deploy/deploy';
+import { projConfig } from '../lib/types';
+import { config } from 'rxjs';
 
+// TODO allow custom configuration of API Gateway subdomain
+const BASE_API_GATEWAY_URL = 'https://test.lambda9.cloud/';
 const SPINNER_TIMEOUT = 1000;
-
 declare global {
   interface JSON {
     parse(text: Buffer, reviver?: (key: any, value: any) => any): any;
@@ -23,26 +27,103 @@ const JSONpackage = JSON.parse(
 
 program.version(JSONpackage.version);
 
-const stringToBoolean = (val: string) => {
-  if (val === 'true' || val === 'false') {
-    return val === 'true';
-  } else {
-    throw Error(`val must be a string boolean: ${val}`);
-  }
-};
+program
+  .command('init')
+  .description(
+    'initialize configuration for serving, building, and deploying lambda functions'
+  )
+  .action(async () => {
+    const l9config: projConfig = {};
+    await inquirer
+      .prompt([
+        {
+          name: 'functionsSrc',
+          message: 'In which directory are your lambda functions?',
+          default: 'src/functions',
+        },
+      ])
+      .then(async (answers: any) => {
+        const functionsSrc = answers.functionsSrc;
+        l9config.functionsSrc = functionsSrc;
+        if (!fs.existsSync(answers.functionsSrc)) {
+          await inquirer
+            .prompt([
+              {
+                type: 'confirm',
+                name: 'createSrcDir',
+                message: `There's no directory at ${
+                  answers.functionsSrc
+                }. Would you like to create one now?`,
+              },
+            ])
+            .then((answers: any) => {
+              if (answers.createSrcDir === true && functionsSrc) {
+                fs.mkdirSync(path.join(process.cwd(), functionsSrc!), {
+                  recursive: true,
+                });
+              }
+            });
+        }
+      });
+
+    await inquirer
+      .prompt([
+        {
+          name: 'functionsOutput',
+          message:
+            'In which directory would you like your built lambda functions? (a root level directory is recommended)',
+          default: '/functions',
+        },
+      ])
+      .then((answers: any) => {
+        l9config.functionsOutput = answers.functionsOutput;
+      });
+
+    await inquirer
+      .prompt([
+        {
+          type: 'list',
+          name: 'nodeRuntime',
+          message: 'Which NodeJS runtime will your lambda functions use?',
+          choices: ['10.15', '8.10'],
+        },
+      ])
+      .then((answers: any) => {
+        l9config.nodeRuntime = answers.nodeRuntime;
+      });
+
+    await inquirer
+      .prompt([
+        {
+          name: 'functionsOutput',
+          message:
+            'On which local port do you want to serve your lambda functions?',
+          default: '9000',
+        },
+      ])
+      .then((answers: any) => {
+        l9config.port = Number(answers.functionsOutput);
+      });
+
+    fs.writeFile('l9config.json', JSON.stringify(l9config), err => {
+      if (err) console.log(`😓    Failed to build config: ${err}`);
+      console.log('\n💾   Your Lambda 9 config has been saved!');
+    });
+  });
 
 program
-  .command('serve <dir>')
+  .command('serve')
   .description('serve and watch functions')
-  .action(function (cmd) {
-    const spinner = ora('🐑  lambda9: Starting server').start();
+  .action(() => {
+    const l9config = getUserLambdaConfig()!;
+    const spinner = ora('🐑  Lambda 9: Serving functions...').start();
     setTimeout(() => {
-      // spinner.color = 'red';
       const useStatic = Boolean(program.static);
       let server: undefined | void;
-      const startServer = function () {
+      const startServer = () => {
         server = listen(
-          program.port || 9000,
+          l9config.functionsOutput,
+          l9config.port || 9000,
           useStatic,
           Number(program.timeout) || 10
         );
@@ -52,131 +133,97 @@ program
         return;
       }
       const { config: userWebpackConfig, babelrc: useBabelrc = true } = program;
-      watch(cmd, { userWebpackConfig, useBabelrc }, function (err, stats) {
-        // console.log(chalk.hex('#FF0000')('!!!!SADFASDFASDFASDFASDFASDFADSFAD'))
-
-        if (err) {
-          console.error(err);
-          return;
-        }
-        console.log(chalk.hex('#24c4f4')(stats.toString()));
-        spinner.stop();
-        if (!server) {
-          startServer();
-          console.log('✅  Done serving!');
-        }
-      });
-    }, SPINNER_TIMEOUT);
-  });
-
-program
-  .command('build <dir>')
-  .description('build functions')
-  .action(function (cmd) {
-    const spinner = ora('🐑  lambda9: Building functions').start();
-    setTimeout(() => {
-      spinner.color = 'green';
-      const { config: userWebpackConfig, babelrc: useBabelrc = true } = program;
-      run(cmd, { userWebpackConfig, useBabelrc })
-        .then(function (stats: any) {
-          console.log(chalk.hex('#f496f4')(stats.toString()));
+      watch(
+        l9config.functionsSrc,
+        l9config.functionsOutput,
+        l9config.nodeRuntime,
+        { userWebpackConfig, useBabelrc },
+        (err: Error, stats: any) => {
+          if (err) {
+            console.error(err);
+            return;
+          }
+          console.log(chalk.hex('#24c4f4')(stats.toString()));
           spinner.stop();
-          console.log('✅  Done building!');
-        })
-        .catch(function (err: Error) {
-          console.error(err);
-          process.exit(1);
-        });
-    }, SPINNER_TIMEOUT);
-  });
-
-program
-  .command('deploy <dir>')
-  .description('deploys functions to aws')
-  .action(function (cmd) {
-    const spinner = ora('🐑  lambda9: Building functions').start();
-    setTimeout(() => {
-
-      //build the functions
-      const { config: userWebpackConfig, babelrc: useBabelrc = true } = program;
-      run(cmd, { userWebpackConfig, useBabelrc })
-        .then(function (stats: any) {
-          console.log(chalk.hex('#f496f4')(stats.toString()));
-          spinner.stop();
-        })
-        .catch(function (err: Error) {
-          console.error(err);
-          process.exit(1);
-        });
-
-      //construct yaml file to send
-      const yamlConfig: any = {
-        AWSTemplateFormatVersion: '2010-09-09',
-        Transform: 'AWS::Serverless-2016-10-31',
-        Description: 'A simple hello world function.',
-        Resources: {}
-      }
-
-      //add yaml sections to yaml file
-      const createYamlSection = (fileName: any) => {
-        fileName = fileName.replace(/\.[^/.]+$/, "")
-        const funcTemplate: any = {
-          Type: 'AWS::Serverless::Function',
-          Properties: {
-            Handler: `${fileName}.handler`,
-            Runtime: 'nodejs8.10',
-            CodeUri: '.',
-            Description: 'A simple hello world function.',
-            MemorySize: 512,
-            Timeout: 10,
-            Events: {
-              Api1: {
-                Type: "Api",
-                Properties: {
-                  Path: `/${fileName}`,
-                  Method: 'ANY'
-                }
-              }
-            }
+          if (!server) {
+            startServer();
+            console.log('\n✅  Done serving!');
           }
         }
-
-        yamlConfig.Resources[fileName] = funcTemplate
-      }
-      //********send built func strings  to some endpoint**********************
-      const funcArr: any = []
-
-      fs.readdirSync(path.join(process.cwd(), `/functions`)).forEach(file => {
-        createYamlSection(file)
-        const data = fs.readFileSync(path.join(process.cwd(), `/functions/${file}`), 'utf8')
-        const funcObj: object = {
-          funcName: file,
-          funcDef: data
-        }
-        funcArr.push(funcObj)
-      });
-
-      axios.post('http://api.lambda9.cloud/lambda/deploy', {
-        funcArr: funcArr,
-        yaml: yaml.safeDump(yamlConfig)
-      })
-        .then((response) => {
-          console.log(response.data);
-        })
-        .catch((error) => {
-          console.log(error);
-        })
-
-      // fs.writeFile(`testYaml.yaml`, yaml.safeDump(yamlConfig), (err) => {
-      //   if (err) console.log(err)
-
-
-      //stop spinner
-      spinner.stop();
+      );
     }, SPINNER_TIMEOUT);
   });
 
-program.on('command:*', function () {
+program
+  .command('build')
+  .description('build functions')
+  .action(() => {
+    const spinner = ora('🐑  Lambda 9: Building functions...').start();
+    setTimeout(() => {
+      const l9config = getUserLambdaConfig()!;
+      spinner.color = 'green';
+      const { config: userWebpackConfig, babelrc: useBabelrc = true } = program;
+      run(
+        l9config.functionsSrc,
+        l9config.functionsOutput,
+        l9config.nodeRuntime,
+        {
+          userWebpackConfig,
+          useBabelrc,
+        }
+      )
+        .then((stats: any) => {
+          console.log(chalk.hex('#f496f4')(stats.toString()));
+          spinner.stop();
+          console.log('\n✅  Done building!');
+        })
+        .catch((err: Error) => {
+          console.error(err);
+          process.exit(1);
+        });
+    }, SPINNER_TIMEOUT);
+  });
+
+program
+  .command('deploy')
+  .description('deploys functions to aws')
+  .action(() => {
+    const l9config = getUserLambdaConfig()!;
+    const spinner = ora('🐑  Lambda 9: Deploying functions...').start();
+    setTimeout(() => {
+      const { config: userWebpackConfig, babelrc: useBabelrc = true } = program;
+      // TODO: Handle already built functions
+      run(
+        l9config.functionsSrc,
+        l9config.functionsOutput,
+        l9config.nodeRuntime,
+        { userWebpackConfig, useBabelrc }
+      )
+        .then((stats: any) => {
+          console.log(chalk.hex('#f496f4')(stats.toString()));
+          deploy()
+            .then((result: any) => {
+              // TODO: Give lambda endpoints to user
+              spinner.stop();
+              console.log(`\n🚀 Successfully deployed! ${result.data}`);
+              console.log(`\n🔗 Lambda endpoints:`);
+              result.endpoints.forEach((endpoint: string) => {
+                console.log(BASE_API_GATEWAY_URL + endpoint);
+              });
+            })
+            .catch(err => {
+              spinner.stop();
+              console.log(`😓 Failed to deploy: ${err}`);
+            });
+        })
+        .catch((err: Error) => {
+          console.error(err);
+          process.exit(1);
+        });
+    }, SPINNER_TIMEOUT);
+  });
+
+program.on('command:*', function() {
   console.error(`❌  "${program.args.join(' ')}" command not found!`);
   process.exit(1);
 });
@@ -187,4 +234,16 @@ const NO_COMMAND_SPECIFIED = program.args.length === 0;
 
 if (NO_COMMAND_SPECIFIED) {
   program.help();
+}
+
+function getUserLambdaConfig() {
+  try {
+    const config: projConfig = JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), 'l9config.json'), 'utf-8')
+    );
+    return config;
+  } catch (err) {
+    console.log(`❌   No Lambda 9 config found. Did you first run 'l9 init'?`);
+    process.exit(1);
+  }
 }
