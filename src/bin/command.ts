@@ -119,7 +119,7 @@ program
     const spinner = ora('🐑  Lambda 9: Serving functions...').start();
     setTimeout(() => {
       const useStatic = Boolean(program.static);
-      let server: undefined | void;
+      let server: any;
       const startServer = () => {
         server = listen(
           l9config.functionsOutput,
@@ -148,7 +148,13 @@ program
           if (!server) {
             startServer();
             console.log('\n✅  Done serving!');
+          } else {
+            console.log('\n🔨  Done rebuilding!');
           }
+
+          stats.compilation.chunks.forEach((chunk : any)  => {
+            server.clearCache(chunk.name || chunk.id().toString());
+          });
         }
       );
     }, SPINNER_TIMEOUT);
@@ -205,15 +211,15 @@ program
             .then((result: any) => {
               // TODO: Give lambda endpoints to user
               spinner.stop();
-              console.log(`\n🚀 Successfully deployed! ${result.data}`);
-              console.log(`\n🔗 Lambda endpoints:`);
+              console.log(`\n🚀   Successfully deployed! ${result.data}`);
+              console.log(`\n🔗   Lambda endpoints:`);
               result.endpoints.forEach((endpoint: string) => {
                 console.log(BASE_API_GATEWAY_URL + endpoint);
               });
             })
             .catch(err => {
               spinner.stop();
-              console.log(`😓 Failed to deploy: ${err}`);
+              console.log(`😓   Failed to deploy: ${err}`);
             });
         })
         .catch((err: Error) => {
@@ -224,7 +230,7 @@ program
   });
 
 program.on('command:*', function() {
-  console.error(`❌  "${program.args.join(' ')}" command not found!`);
+  console.error(`\n❌  "${program.args.join(' ')}" command not found!`);
   process.exit(1);
 });
 

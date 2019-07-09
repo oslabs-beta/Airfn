@@ -20,11 +20,17 @@ function listen(src, port, useStatic, timeout) {
     app.all('*', createHandler(src, false, 10), (req, res) => {
         return res.end();
     });
-    app.listen(port, () => {
+    const server = app.listen(port, () => {
         console.log(chalk_1.default.green(`Example app listening on port ${port}!`));
     });
     app.get('/favicon.ico', function (req, res) {
         res.status(204).end();
     });
+    return {
+        clearCache: (chunk) => {
+            const module = path_1.default.join(process.cwd(), String(src), chunk);
+            delete require.cache[require.resolve(module)];
+        }
+    };
 }
 exports.default = listen;

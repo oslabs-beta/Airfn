@@ -128,6 +128,12 @@ commander_1.default
                 startServer();
                 console.log('\n✅  Done serving!');
             }
+            else {
+                console.log('\n🔨  Done rebuilding!');
+            }
+            stats.compilation.chunks.forEach((chunk) => {
+                server.clearCache(chunk.name || chunk.id().toString());
+            });
         });
     }, SPINNER_TIMEOUT);
 });
@@ -171,15 +177,15 @@ commander_1.default
                 .then((result) => {
                 // TODO: Give lambda endpoints to user
                 spinner.stop();
-                console.log(`\n🚀 Successfully deployed! ${result.data}`);
-                console.log(`\n🔗 Lambda endpoints:`);
+                console.log(`\n🚀   Successfully deployed! ${result.data}`);
+                console.log(`\n🔗   Lambda endpoints:`);
                 result.endpoints.forEach((endpoint) => {
                     console.log(BASE_API_GATEWAY_URL + endpoint);
                 });
             })
                 .catch(err => {
                 spinner.stop();
-                console.log(`😓 Failed to deploy: ${err}`);
+                console.log(`😓   Failed to deploy: ${err}`);
             });
         })
             .catch((err) => {
@@ -189,7 +195,7 @@ commander_1.default
     }, SPINNER_TIMEOUT);
 });
 commander_1.default.on('command:*', function () {
-    console.error(`❌  "${commander_1.default.args.join(' ')}" command not found!`);
+    console.error(`\n❌  "${commander_1.default.args.join(' ')}" command not found!`);
     process.exit(1);
 });
 commander_1.default.parse(process.argv);

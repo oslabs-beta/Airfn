@@ -12,7 +12,7 @@ function listen(
   port: number,
   useStatic: boolean,
   timeout: number
-) {
+) : any {
   const app: express.Application = express();
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
@@ -24,12 +24,21 @@ function listen(
     return res.end();
   });
 
-  app.listen(port, () => {
+  const server: any = app.listen(port, () => {
     console.log(chalk.green(`Example app listening on port ${port}!`));
   });
+
 
   app.get('/favicon.ico', function(req, res) {
     res.status(204).end();
   });
+
+   return {
+    clearCache: (chunk : any)  => {
+      const module = path.join(process.cwd(), String(src), chunk);
+      delete require.cache[require.resolve(module)];
+    }
+  };
+
 }
 export default listen;
