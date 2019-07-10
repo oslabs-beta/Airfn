@@ -12,18 +12,19 @@ interface config {
   Resources: object;
 }
 
-export default (
+function createDeployArtifacts(
+  functionsOutput: string | void,
   join: Function,
   fs: { readFileSync: Function; readdirSync: Function },
   safeDump: Function
-) => {
+) {
   const funcArr: any = [];
   const yamlConfig: config = YAML_CONFIG_TEMPLATE;
 
-  fs.readdirSync(join(process.cwd(), `/functions`)).forEach((file: string) => {
+  fs.readdirSync(join(process.cwd(), functionsOutput)).forEach((file: string) => {
     createFunctionResource(file, yamlConfig);
     const data = fs.readFileSync(
-      join(process.cwd(), `/functions/${file}`),
+      join(process.cwd(), `${functionsOutput}/${file}`),
       'utf8'
     );
     const funcObj: object = {
@@ -36,6 +37,15 @@ export default (
     yaml: safeDump(yamlConfig),
     funcArr,
   };
+};
+
+function createUserS3Bucket(endpoint: string, user: string | void, post: Function) {
+  const data = {
+    user
+  };
+  return new Promise((resolve, reject) => {
+    post(endpoint, data).then((response: any) => resolve(response.data)).catch((err: Error) => reject(err));
+  });
 };
 
 function createFunctionResource(fileName: string, yamlConfig: any): void {
@@ -62,3 +72,5 @@ function createFunctionResource(fileName: string, yamlConfig: any): void {
   };
   yamlConfig.Resources[fileName] = funcTemplate;
 }
+
+export { createDeployArtifacts, createUserS3Bucket }

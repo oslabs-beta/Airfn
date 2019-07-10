@@ -34,6 +34,48 @@ program
   )
   .action(async () => {
     const l9config: projConfig = {};
+    const cwdName: string = path.parse(process.cwd()).name;
+
+    console.log('\n👤 Please login first with your username and password\n')
+
+    // TODO: Implement actual auth
+    await inquirer
+      .prompt([
+        {
+          name: 'username',
+          message:
+            'Username:'
+        },
+      ])
+      .then((answers: any) => {
+        l9config.user = answers.username;
+      });
+
+    await inquirer
+    .prompt([
+      {
+        name: 'password',
+        type: 'password',
+        message:
+          'Password:'
+      },
+    ])
+    .then((answers: any) => {
+    });
+
+    await inquirer
+      .prompt([
+        {
+          name: 'project',
+          message:
+            'Enter project name for your lambda functions:',
+          default: cwdName
+        },
+      ])
+      .then((answers: any) => {
+        l9config.project = answers.project;
+      });
+      
     await inquirer
       .prompt([
         {
@@ -207,17 +249,21 @@ program
       )
         .then((stats: any) => {
           console.log(chalk.hex('#f496f4')(stats.toString()));
-          deploy()
+          deploy(  
+            l9config.user,
+            l9config.project,
+            l9config.functionsOutput
+            )
             .then((result: any) => {
               // TODO: Give lambda endpoints to user
               spinner.stop();
               console.log(`\n🚀   Successfully deployed! ${result.data}`);
               console.log(`\n🔗   Lambda endpoints:`);
               result.endpoints.forEach((endpoint: string) => {
-                console.log(BASE_API_GATEWAY_URL + endpoint);
+                console.log(`${BASE_API_GATEWAY_URL}${l9config.project}/${endpoint}`);
               });
             })
-            .catch(err => {
+            .catch((err: Error) => {
               spinner.stop();
               console.log(`😓   Failed to deploy: ${err}`);
             });
