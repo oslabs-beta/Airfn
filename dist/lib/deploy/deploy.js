@@ -9,7 +9,7 @@ const axios_1 = __importDefault(require("axios"));
 const js_yaml_1 = require("js-yaml");
 const deployController_1 = require("./deployController");
 const DEPLOY_ENDPOINT = 'http://api.lambda9.cloud/lambda/deploy';
-const S3_CREATE_LAMBDA_ENDPOINT = 'http://localhost:9000/createbucket';
+const S3_CREATE_LAMBDA_ENDPOINT = 'https://test.lambda9.cloud/cli/createbucket';
 exports.default = (user, project, functionsOutput) => {
     return new Promise((resolve, reject) => {
         const deployArtifacts = deployController_1.createDeployArtifacts(functionsOutput, path_1.join, {

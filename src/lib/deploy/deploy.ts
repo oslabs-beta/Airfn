@@ -5,7 +5,7 @@ import { safeDump } from 'js-yaml';
 import { createDeployArtifacts, createUserS3Bucket } from './deployController';
 
 const DEPLOY_ENDPOINT = 'http://api.lambda9.cloud/lambda/deploy';
-const S3_CREATE_LAMBDA_ENDPOINT = 'http://localhost:9000/createbucket';
+const S3_CREATE_LAMBDA_ENDPOINT = 'https://test.lambda9.cloud/cli/createbucket';
 
 interface funcObj {
   funcName: string;
