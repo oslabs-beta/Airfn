@@ -1,7 +1,7 @@
 const YAML_CONFIG_TEMPLATE: config = {
   AWSTemplateFormatVersion: '2010-09-09',
   Transform: 'AWS::Serverless-2016-10-31',
-  Description: 'Deployed with Lambda 9 CLI.',
+  Description: 'Deployed with Airfn CLI.',
   Resources: {},
 };
 
@@ -56,7 +56,7 @@ function createFunctionResource(fileName: string, yamlConfig: any): void {
       Handler: `${fileName}.handler`,
       Runtime: 'nodejs8.10',
       CodeUri: '.',
-      Description: 'A function deployed with Lambda 9 CLI',
+      Description: 'A function deployed with Airfn CLI',
       MemorySize: 512,
       Timeout: 10,
       Events: {

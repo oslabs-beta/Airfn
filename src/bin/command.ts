@@ -6,6 +6,7 @@ import program from 'commander';
 import inquirer from 'inquirer';
 import ora from 'ora';
 import chalk from 'chalk';
+import axios, { AxiosResponse } from 'axios';
 import listen from '../lib/serve/serve';
 import { run, watch } from '../lib/build/build';
 import deploy from '../lib/deploy/deploy';
@@ -13,7 +14,8 @@ import { projConfig } from '../lib/types';
 import { config } from 'rxjs';
 
 // TODO allow custom configuration of API Gateway subdomain
-const BASE_API_GATEWAY_URL = 'https://test.lambda9.cloud/';
+const BASE_API_GATEWAY_ENDPOINT = 'https://test.lambda9.cloud/';
+const AUTH_ENDPOINT = 'https://test.lambda9.cloud/cli/cliauth';
 const SPINNER_TIMEOUT = 1000;
 declare global {
   interface JSON {
@@ -33,49 +35,69 @@ program
     'initialize configuration for serving, building, and deploying lambda functions'
   )
   .action(async () => {
-    const l9config: projConfig = {};
+    const airfnConfig: projConfig = {};
     const cwdName: string = path.parse(process.cwd()).name;
 
-    console.log('\n👤 Please login first with your username and password\n')
+    console.log(`\n👤 Please login with your username and password\nYou can sign up for an account at https://airfn.io/signup\n`);
 
     // TODO: Implement actual auth
     await inquirer
       .prompt([
         {
           name: 'username',
-          message:
-            'Username:'
+          message: 'Username:',
         },
       ])
-      .then((answers: any) => {
-        l9config.user = answers.username;
+      .then(async (answers: any) => {
+        const username = answers.username;
+        await inquirer
+        .prompt([
+          {
+            name: 'password',
+            type: 'password',
+            message: 'Password:',
+          },
+        ])
+      .then(async (answers: any) => {
+          const password = answers.password;
+          const credentials = {
+            username,
+            password
+          }
+          await axios.post(AUTH_ENDPOINT, credentials).then((response: AxiosResponse) => {
+            const rootConfig = {
+                  clientId: response.data
+                };
+            const homedir = require('os').homedir();
+            const rootConfigDir = path.join(homedir, '.airfn');
+            if (!fs.existsSync(rootConfigDir)){
+              fs.mkdir(rootConfigDir, (err) => {
+                if (err) console.log(`😓    Failed to build config: ${err}`);            
+            });            }
+            fs.writeFile(path.join(homedir, '.airfn', 'config.json'), JSON.stringify(rootConfig), err => {
+                if (err) console.log(`😓    Failed to build config: ${err}`);
+            });
+          }).catch((err: Error) => {
+            console.log(`❌ Wrong user/password combination.\n Retry by running 'air init' again`);
+            process.exit()
+          })
+      });
       });
 
-    await inquirer
-    .prompt([
-      {
-        name: 'password',
-        type: 'password',
-        message:
-          'Password:'
-      },
-    ])
-    .then((answers: any) => {
-    });
+    
 
     await inquirer
       .prompt([
         {
           name: 'project',
-          message:
-            'Enter project name for your lambda functions:',
-          default: cwdName
+          message: 'Enter project name for your lambda functions:',
+          default: cwdName,
         },
       ])
       .then((answers: any) => {
-        l9config.project = answers.project;
+        airfnConfig.project = answers.project;
       });
-      
+
     await inquirer
       .prompt([
         {
@@ -86,7 +108,7 @@ program
       ])
       .then(async (answers: any) => {
         const functionsSrc = answers.functionsSrc;
-        l9config.functionsSrc = functionsSrc;
+        airfnConfig.functionsSrc = functionsSrc;
         if (!fs.existsSync(answers.functionsSrc)) {
           await inquirer
             .prompt([
@@ -118,7 +140,7 @@ program
         },
       ])
       .then((answers: any) => {
-        l9config.functionsOutput = answers.functionsOutput;
+        airfnConfig.functionsOutput = answers.functionsOutput;
       });
 
     await inquirer
@@ -131,7 +153,7 @@ program
         },
       ])
       .then((answers: any) => {
-        l9config.nodeRuntime = answers.nodeRuntime;
+        airfnConfig.nodeRuntime = answers.nodeRuntime;
       });
 
     await inquirer
@@ -144,12 +166,12 @@ program
         },
       ])
       .then((answers: any) => {
-        l9config.port = Number(answers.functionsOutput);
+        airfnConfig.port = Number(answers.functionsOutput);
       });
 
-    fs.writeFile('l9config.json', JSON.stringify(l9config), err => {
+    fs.writeFile('airfn.json', JSON.stringify(airfnConfig), err => {
       if (err) console.log(`😓    Failed to build config: ${err}`);
-      console.log('\n💾   Your Lambda 9 config has been saved!');
+      console.log('\n💾   Your Airfn config has been saved!');
     });
   });
 
@@ -157,15 +179,15 @@ program
   .command('serve')
   .description('serve and watch functions')
   .action(() => {
-    const l9config = getUserLambdaConfig()!;
-    const spinner = ora('🐑  Lambda 9: Serving functions...').start();
+    const airfnConfig = getUserLambdaConfig()!;
+    const spinner = ora('☁️  Airfn: Serving functions...').start();
     setTimeout(() => {
       const useStatic = Boolean(program.static);
       let server: any;
       const startServer = () => {
         server = listen(
-          l9config.functionsOutput,
-          l9config.port || 9000,
+          airfnConfig.functionsOutput,
+          airfnConfig.port || 9000,
           useStatic,
           Number(program.timeout) || 10
         );
@@ -176,9 +198,9 @@ program
       }
       const { config: userWebpackConfig, babelrc: useBabelrc = true } = program;
       watch(
-        l9config.functionsSrc,
-        l9config.functionsOutput,
-        l9config.nodeRuntime,
+        airfnConfig.functionsSrc,
+        airfnConfig.functionsOutput,
+        airfnConfig.nodeRuntime,
         { userWebpackConfig, useBabelrc },
         (err: Error, stats: any) => {
           if (err) {
@@ -194,7 +216,7 @@ program
             console.log('\n🔨  Done rebuilding!');
           }
 
-          stats.compilation.chunks.forEach((chunk : any)  => {
+          stats.compilation.chunks.forEach((chunk: any) => {
             server.clearCache(chunk.name || chunk.id().toString());
           });
         }
@@ -206,15 +228,15 @@ program
   .command('build')
   .description('build functions')
   .action(() => {
-    const spinner = ora('🐑  Lambda 9: Building functions...').start();
+    const spinner = ora('☁️  Airfn: Building functions...').start();
     setTimeout(() => {
-      const l9config = getUserLambdaConfig()!;
+      const airfnConfig = getUserLambdaConfig()!;
       spinner.color = 'green';
       const { config: userWebpackConfig, babelrc: useBabelrc = true } = program;
       run(
-        l9config.functionsSrc,
-        l9config.functionsOutput,
-        l9config.nodeRuntime,
+        airfnConfig.functionsSrc,
+        airfnConfig.functionsOutput,
+        airfnConfig.nodeRuntime,
         {
           userWebpackConfig,
           useBabelrc,
@@ -236,31 +258,33 @@ program
   .command('deploy')
   .description('deploys functions to aws')
   .action(() => {
-    const l9config = getUserLambdaConfig()!;
-    const spinner = ora('🐑  Lambda 9: Deploying functions...').start();
+    const airfnConfig = getUserLambdaConfig()!;
+    const spinner = ora('☁️  Airfn: Deploying functions...').start();
     setTimeout(() => {
       const { config: userWebpackConfig, babelrc: useBabelrc = true } = program;
       // TODO: Handle already built functions
       run(
-        l9config.functionsSrc,
-        l9config.functionsOutput,
-        l9config.nodeRuntime,
+        airfnConfig.functionsSrc,
+        airfnConfig.functionsOutput,
+        airfnConfig.nodeRuntime,
         { userWebpackConfig, useBabelrc }
       )
         .then((stats: any) => {
           console.log(chalk.hex('#f496f4')(stats.toString()));
-          deploy(  
-            l9config.user,
-            l9config.project,
-            l9config.functionsOutput
-            )
+          deploy(
+            airfnConfig.user,
+            airfnConfig.project,
+            airfnConfig.functionsOutput
+          )
             .then((result: any) => {
               // TODO: Give lambda endpoints to user
               spinner.stop();
               console.log(`\n🚀   Successfully deployed! ${result.data}`);
               console.log(`\n🔗   Lambda endpoints:`);
               result.endpoints.forEach((endpoint: string) => {
-                console.log(`${BASE_API_GATEWAY_URL}${l9config.project}/${endpoint}`);
+                console.log(
+                  `${BASE_API_GATEWAY_ENDPOINT}${airfnConfig.project}/${endpoint}`
+                );
               });
             })
             .catch((err: Error) => {
@@ -291,11 +315,11 @@ if (NO_COMMAND_SPECIFIED) {
 function getUserLambdaConfig() {
   try {
     const config: projConfig = JSON.parse(
-      fs.readFileSync(path.join(process.cwd(), 'l9config.json'), 'utf-8')
+      fs.readFileSync(path.join(process.cwd(), 'airfn.json'), 'utf-8')
     );
     return config;
   } catch (err) {
-    console.log(`❌   No Lambda 9 config found. Did you first run 'l9 init'?`);
+    console.log(`❌   No Airfn config found. Did you first run 'l9 init'?`);
     process.exit(1);
   }
 }
