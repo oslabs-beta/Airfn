@@ -78,7 +78,7 @@ program
                 if (err) console.log(`😓    Failed to build config: ${err}`);
             });
           }).catch((err: Error) => {
-            console.log(`❌ Wrong user/password combination.\n Retry by running 'air init' again`);
+            console.log(`❌ Wrong username/password combination.\n Retry by running 'air init' again`);
             process.exit()
           })
       });
