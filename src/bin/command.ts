@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import os from 'os';
 import fs from 'fs';
 import path from 'path';
 import program from 'commander';
@@ -14,6 +15,8 @@ import { projConfig } from '../lib/types';
 import { config } from 'rxjs';
 
 // TODO allow custom configuration of API Gateway subdomain
+const ROOT_CONFIG_FILENAME = 'config.json';
+const ROOT_CONFIG_DIRNAME = '.airfn';
 const BASE_API_GATEWAY_ENDPOINT = 'https://test.lambda9.cloud/';
 const AUTH_ENDPOINT = 'https://test.lambda9.cloud/cli/cliauth';
 const SPINNER_TIMEOUT = 1000;
@@ -32,7 +35,7 @@ program.version(JSONpackage.version);
 program
   .command('init')
   .description(
-    'initialize configuration for serving, building, and deploying lambda functions'
+    'Initialize configuration for serving, building, and deploying lambda functions'
   )
   .action(async () => {
     const airfnConfig: projConfig = {};
@@ -50,6 +53,7 @@ program
       ])
       .then(async (answers: any) => {
         const username = answers.username;
+        airfnConfig.user = answers.username;
         await inquirer
         .prompt([
           {
@@ -65,16 +69,18 @@ program
             password
           }
           await axios.post(AUTH_ENDPOINT, credentials).then((response: AxiosResponse) => {
+            const homedir = os.homedir();
+            const rootConfigDir = path.join(homedir, ROOT_CONFIG_DIRNAME);
+            const rootConfigPath = path.join(rootConfigDir, ROOT_CONFIG_FILENAME);
+
             const rootConfig = {
                   clientId: response.data
                 };
-            const homedir = require('os').homedir();
-            const rootConfigDir = path.join(homedir, '.airfn');
             if (!fs.existsSync(rootConfigDir)){
               fs.mkdir(rootConfigDir, (err) => {
                 if (err) console.log(`😓    Failed to build config: ${err}`);            
             });            }
-            fs.writeFile(path.join(homedir, '.airfn', 'config.json'), JSON.stringify(rootConfig), err => {
+            fs.writeFile(rootConfigPath, JSON.stringify(rootConfig), err => {
                 if (err) console.log(`😓    Failed to build config: ${err}`);
             });
           }).catch((err: Error) => {
@@ -83,8 +89,6 @@ program
           })
       });
       });
-
-    
 
     await inquirer
       .prompt([
@@ -177,8 +181,9 @@ program
 
 program
   .command('serve')
-  .description('serve and watch functions')
+  .description('Serve and watch functions')
   .action(() => {
+    getUserAccessKey();
     const airfnConfig = getUserLambdaConfig()!;
     const spinner = ora('☁️  Airfn: Serving functions...').start();
     setTimeout(() => {
@@ -226,8 +231,9 @@ program
 
 program
   .command('build')
-  .description('build functions')
+  .description('Build functions')
   .action(() => {
+    getUserAccessKey();
     const spinner = ora('☁️  Airfn: Building functions...').start();
     setTimeout(() => {
       const airfnConfig = getUserLambdaConfig()!;
@@ -256,8 +262,9 @@ program
 
 program
   .command('deploy')
-  .description('deploys functions to aws')
+  .description('Deploys functions to AWS')
   .action(() => {
+    const accessKey = getUserAccessKey();
     const airfnConfig = getUserLambdaConfig()!;
     const spinner = ora('☁️  Airfn: Deploying functions...').start();
     setTimeout(() => {
@@ -273,6 +280,7 @@ program
           console.log(chalk.hex('#f496f4')(stats.toString()));
           deploy(
             airfnConfig.user,
+            accessKey,
             airfnConfig.project,
             airfnConfig.functionsOutput
           )
@@ -299,6 +307,25 @@ program
     }, SPINNER_TIMEOUT);
   });
 
+program
+  .command('logout')
+  .description('Log out of Airfn CLI')
+  .action(() => {
+    const { configFound, configDir } = rootConfigExists();
+    if (configFound) {
+      try {
+        removeDir(configDir);
+        console.log('Logged out of Airfn CLI');
+        process.exit(0);
+      } catch(err) {
+        console.error(`Failed to log out`);
+      } 
+    } else {
+        console.log(`Already logged out`);
+        process.exit(1);
+      }
+  });
+
 program.on('command:*', function() {
   console.error(`\n❌  "${program.args.join(' ')}" command not found!`);
   process.exit(1);
@@ -312,6 +339,37 @@ if (NO_COMMAND_SPECIFIED) {
   program.help();
 }
 
+function getUserAccessKey() {
+  const { configFound, configPath } = rootConfigExists();
+  if (configFound) {
+    try {
+      const rootConfig = JSON.parse(
+      fs.readFileSync(configPath, 'utf-8')
+    );
+    return rootConfig.clientId;
+    } catch (err) {
+      console.log(`❌ Error reading config`)
+    }
+    
+  } else {
+    console.log(`❗️ Please login first by running 'air init'`);
+    process.exit(1);
+  }
+}
+
+function rootConfigExists() {
+  const homedir = os.homedir();
+  const rootConfigDir = path.join(homedir, ROOT_CONFIG_DIRNAME);
+  const rootConfigPath = path.join(rootConfigDir, ROOT_CONFIG_FILENAME);
+  const configFound = fs.existsSync(rootConfigPath);
+  const configProps =  { 
+      configFound: configFound, 
+      configDir: rootConfigDir,
+      configPath: rootConfigPath 
+    };
+  return configProps;
+}
+
 function getUserLambdaConfig() {
   try {
     const config: projConfig = JSON.parse(
@@ -323,3 +381,18 @@ function getUserLambdaConfig() {
     process.exit(1);
   }
 }
+
+function removeDir(dir: string) {
+  const list = fs.readdirSync(dir);
+  for(let i = 0; i < list.length; i++) {
+      const filename = path.join(dir, list[i]);
+      const stat = fs.statSync(filename);
+      if (stat.isDirectory()) {
+          removeDir(filename);
+      } else {
+          fs.unlinkSync(filename);
+      }
+  }
+  fs.rmdirSync(dir);
+}
+

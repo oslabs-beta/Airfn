@@ -4,7 +4,14 @@ const YAML_CONFIG_TEMPLATE = {
     AWSTemplateFormatVersion: '2010-09-09',
     Transform: 'AWS::Serverless-2016-10-31',
     Description: 'Deployed with Airfn CLI.',
-    Resources: {},
+    Outputs: {
+        ApiGatewayId: {
+            Value: {
+                Ref: "ServerlessRestApi"
+            }
+        }
+    },
+    Resources: {}
 };
 function createDeployArtifacts(functionsOutput, join, fs, safeDump) {
     const funcArr = [];
@@ -19,7 +26,7 @@ function createDeployArtifacts(functionsOutput, join, fs, safeDump) {
         funcArr.push(funcObj);
     });
     return {
-        yaml: safeDump(yamlConfig),
+        yaml: safeDump(yamlConfig, { noCompatMode: true, noRefs: true }),
         funcArr,
     };
 }

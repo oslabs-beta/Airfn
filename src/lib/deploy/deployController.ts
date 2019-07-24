@@ -2,7 +2,14 @@ const YAML_CONFIG_TEMPLATE: config = {
   AWSTemplateFormatVersion: '2010-09-09',
   Transform: 'AWS::Serverless-2016-10-31',
   Description: 'Deployed with Airfn CLI.',
-  Resources: {},
+  Outputs: {
+    ApiGatewayId: {
+      Value: {
+        Ref: "ServerlessRestApi"
+      }
+    }
+  },
+  Resources: {}
 };
 
 interface config {
@@ -10,6 +17,7 @@ interface config {
   Transform: string;
   Description: string;
   Resources: object;
+  Outputs: object;
 }
 
 function createDeployArtifacts(
@@ -34,7 +42,7 @@ function createDeployArtifacts(
     funcArr.push(funcObj);
   });
   return {
-    yaml: safeDump(yamlConfig),
+    yaml: safeDump(yamlConfig, { noCompatMode: true, noRefs: true}),
     funcArr,
   };
 };
