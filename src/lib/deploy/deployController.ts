@@ -41,6 +41,7 @@ function createDeployArtifacts(
     };
     funcArr.push(funcObj);
   });
+  
   return {
     yaml: safeDump(yamlConfig, { noCompatMode: true, noRefs: true}),
     funcArr,

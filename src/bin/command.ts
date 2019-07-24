@@ -17,7 +17,7 @@ import { config } from 'rxjs';
 // TODO allow custom configuration of API Gateway subdomain
 const ROOT_CONFIG_FILENAME = 'config.json';
 const ROOT_CONFIG_DIRNAME = '.airfn';
-const BASE_API_GATEWAY_ENDPOINT = 'https://test.lambda9.cloud/';
+const BASE_API_GATEWAY_ENDPOINT = 'lambda9.cloud';
 const AUTH_ENDPOINT = 'https://test.lambda9.cloud/cli/cliauth';
 const SPINNER_TIMEOUT = 1000;
 declare global {
@@ -185,7 +185,7 @@ program
   .action(() => {
     getUserAccessKey();
     const airfnConfig = getUserLambdaConfig()!;
-    const spinner = ora('☁️  Airfn: Serving functions...').start();
+    const spinner = ora('☁️   Airfn: Serving functions...').start();
     setTimeout(() => {
       const useStatic = Boolean(program.static);
       let server: any;
@@ -234,7 +234,7 @@ program
   .description('Build functions')
   .action(() => {
     getUserAccessKey();
-    const spinner = ora('☁️  Airfn: Building functions...').start();
+    const spinner = ora('☁️   Airfn: Building functions...').start();
     setTimeout(() => {
       const airfnConfig = getUserLambdaConfig()!;
       spinner.color = 'green';
@@ -266,7 +266,7 @@ program
   .action(() => {
     const accessKey = getUserAccessKey();
     const airfnConfig = getUserLambdaConfig()!;
-    const spinner = ora('☁️  Airfn: Deploying functions...').start();
+    const spinner = ora('☁️   Airfn: Deploying functions...').start();
     setTimeout(() => {
       const { config: userWebpackConfig, babelrc: useBabelrc = true } = program;
       // TODO: Handle already built functions
@@ -282,6 +282,7 @@ program
             airfnConfig.user,
             accessKey,
             airfnConfig.project,
+            airfnConfig.functionsSrc,
             airfnConfig.functionsOutput
           )
             .then((result: any) => {
@@ -291,7 +292,7 @@ program
               console.log(`\n🔗   Lambda endpoints:`);
               result.endpoints.forEach((endpoint: string) => {
                 console.log(
-                  `${BASE_API_GATEWAY_ENDPOINT}${airfnConfig.project}/${endpoint}`
+                  `https://${airfnConfig.project}.${BASE_API_GATEWAY_ENDPOINT}/${endpoint}`
                 );
               });
             })

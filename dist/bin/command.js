@@ -26,7 +26,7 @@ const deploy_1 = __importDefault(require("../lib/deploy/deploy"));
 // TODO allow custom configuration of API Gateway subdomain
 const ROOT_CONFIG_FILENAME = 'config.json';
 const ROOT_CONFIG_DIRNAME = '.airfn';
-const BASE_API_GATEWAY_ENDPOINT = 'https://test.lambda9.cloud/';
+const BASE_API_GATEWAY_ENDPOINT = 'lambda9.cloud';
 const AUTH_ENDPOINT = 'https://test.lambda9.cloud/cli/cliauth';
 const SPINNER_TIMEOUT = 1000;
 const JSONpackage = JSON.parse(fs_1.default.readFileSync(path_1.default.join(__dirname, '..', '..', 'package.json')));
@@ -172,7 +172,7 @@ commander_1.default
     .action(() => {
     getUserAccessKey();
     const airfnConfig = getUserLambdaConfig();
-    const spinner = ora_1.default('☁️  Airfn: Serving functions...').start();
+    const spinner = ora_1.default('☁️   Airfn: Serving functions...').start();
     setTimeout(() => {
         const useStatic = Boolean(commander_1.default.static);
         let server;
@@ -209,7 +209,7 @@ commander_1.default
     .description('Build functions')
     .action(() => {
     getUserAccessKey();
-    const spinner = ora_1.default('☁️  Airfn: Building functions...').start();
+    const spinner = ora_1.default('☁️   Airfn: Building functions...').start();
     setTimeout(() => {
         const airfnConfig = getUserLambdaConfig();
         spinner.color = 'green';
@@ -235,21 +235,21 @@ commander_1.default
     .action(() => {
     const accessKey = getUserAccessKey();
     const airfnConfig = getUserLambdaConfig();
-    const spinner = ora_1.default('☁️  Airfn: Deploying functions...').start();
+    const spinner = ora_1.default('☁️   Airfn: Deploying functions...').start();
     setTimeout(() => {
         const { config: userWebpackConfig, babelrc: useBabelrc = true } = commander_1.default;
         // TODO: Handle already built functions
         build_1.run(airfnConfig.functionsSrc, airfnConfig.functionsOutput, airfnConfig.nodeRuntime, { userWebpackConfig, useBabelrc })
             .then((stats) => {
             console.log(chalk_1.default.hex('#f496f4')(stats.toString()));
-            deploy_1.default(airfnConfig.user, accessKey, airfnConfig.project, airfnConfig.functionsOutput)
+            deploy_1.default(airfnConfig.user, accessKey, airfnConfig.project, airfnConfig.functionsSrc, airfnConfig.functionsOutput)
                 .then((result) => {
                 // TODO: Give lambda endpoints to user
                 spinner.stop();
                 console.log(`\n🚀   Successfully deployed! ${result.data}`);
                 console.log(`\n🔗   Lambda endpoints:`);
                 result.endpoints.forEach((endpoint) => {
-                    console.log(`${BASE_API_GATEWAY_ENDPOINT}${airfnConfig.project}/${endpoint}`);
+                    console.log(`https://${airfnConfig.project}.${BASE_API_GATEWAY_ENDPOINT}/${endpoint}`);
                 });
             })
                 .catch((err) => {
