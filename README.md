@@ -28,4 +28,4 @@ imported Node modules to her chosen Node.js version via Babel.
 
 > CLI gets function source code of user's functions that will be used to deploy as Lambdas to AWS and return endpoints.
 
-![frontend screenshot](https://s3.amazonaws.com/poly-screenshots.angel.co/Project/20/1013350/cf509910af7d10a83142fd2d297c2847-original.png)
+![frontend screenshot](https://airfn.io/static/b5989c8a5d27d55e2136896f345a80a5/af144/code.png)
