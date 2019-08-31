@@ -15,16 +15,17 @@ within project directory.
 
 * User serves functions locally as Lambdas by entering `air serve`.
 
-    CLI spins up an Express server and serves the user’s functions, using the
+> CLI spins up an Express server and serves the user’s functions, using the
 names of the functions as the names of the API endpoints. User can now
 locally test her Lambdas by sending requests to the endpoints.
 
 * User builds functions for deployment by entering `air build`.
 
-    CLI processes user&#39;s functions to transpile functions source code and any
+> CLI processes user&#39;s functions to transpile functions source code and any
 imported Node modules to her chosen Node.js version via Babel.
 
 * User deploys functions to AWS by entering `air deploy`.
-        CLI gets function source code of user's functions that will be used to deploy as Lambdas to AWS and return endpoints.
+
+> CLI gets function source code of user's functions that will be used to deploy as Lambdas to AWS and return endpoints.
 
 ![frontend screenshot](https://s3.amazonaws.com/poly-screenshots.angel.co/Project/20/1013350/cf509910af7d10a83142fd2d297c2847-original.png)
