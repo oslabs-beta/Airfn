@@ -28,4 +28,6 @@ imported Node modules to her chosen Node.js version via Babel.
 
 > CLI gets function source code of user's functions that will be used to deploy as Lambdas to AWS and return endpoints.
 
-<img src="https://airfn.io/static/b5989c8a5d27d55e2136896f345a80a5/af144/code.png" width="300">
+<p align="center">
+  <img src="https://airfn.io/static/b5989c8a5d27d55e2136896f345a80a5/af144/code.png" width="500">
+</p>
