@@ -15,23 +15,22 @@ within project directory.
 
 * User serves functions locally as Lambdas by entering air serve.
 
-> CLI spins up an Express server and serves the user’s functions, using the
+...CLI spins up an Express server and serves the user’s functions, using the
 names of the functions as the names of the API endpoints. User can now
 locally test her Lambdas by sending requests to the endpoints.
 
 * User builds functions for deployment by entering air build.
 
-> CLI processes user&#39;s functions to transpile functions source code and any
+...CLI processes user&#39;s functions to transpile functions source code and any
 imported Node modules to her chosen Node.js version via Babel.
 
 * User deploys functions to AWS by entering air deploy.
 
-> CLI gets function source code of user&#39;s functions in string format, along
+...CLI gets function source code of user&#39;s functions in string format, along
 with a generated YAML template based on the user&#39;s functions containing
 configuration for AWS API Gateway and other services, that will be used
 to deploy the functions as Lambdas to AWS and later be written to our
-AWS DynamoDB database.
-○ CLI sends payload of deploy artifacts consisting of functions’ source code,
+AWS DynamoDB database. CLI sends payload of deploy artifacts consisting of functions’ source code,
 the YAML configuration, and metadata (i.e. user access key, project
 name, etc.) to our Deploy Microservice, a Golang microservice hosted on
 AWS EC2. Deploy Microservice receives the payload and spins up a
@@ -41,7 +40,7 @@ was created from a Docker base image that runs in a Python environment
 and has the AWS CLI pre-installed, will run the AWS CLI command that
 will package the functions’ source code in a ZIP file and deploy the user&#39;s
 functions to AWS on her project’s S3 bucket.
-○ Upon deployment the CLI invokes an Airfn Lambda that will map the
+Upon deployment the CLI invokes an Airfn Lambda that will map the
 users’ deployed functions on AWS API Gateway to a custom domain
 configured via AWS Route 53 based on the user’s project name. Another
 Airfn Lambda gets invoked to subscribe the function to an AWS Kinesis
