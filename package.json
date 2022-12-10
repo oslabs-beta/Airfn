@@ -8,7 +8,7 @@
     "axios": "^0.19.0",
     "body-parser": "^1.19.0",
     "commander": "^2.20.0",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "inquirer": "^6.4.1",
     "js-yaml": "^3.13.1",
     "ora": "^3.4.0",
